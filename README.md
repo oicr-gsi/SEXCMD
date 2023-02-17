@@ -13,9 +13,10 @@
  4. lastz(Release 1.02.00) (http://www.bx.psu.edu/~rsharris/lastz/lastz-1.04.00.tar.gz)
  5. samtools (https://sourceforge.net/projects/samtools/files/samtools/)
  6. R (https://www.r-project.org/)
+ 7. R packages e1071, seqinr, optparse
  
 ## Input Files
- 1. Reference genome fasta file (ex. hg38.fa)
+ 1. Reference genome fasta file (ex. hg38.fa) - for creation of sex marker files
  2. Input sequence file (ex. ERR000000.fastq.gz)
 
 ## Example
@@ -58,7 +59,7 @@ Final sex marker : sex_marker_filtered.hg38.final.fasta
 
 ## Sex determination
 
-Rscript SEXCMD.R sex_marker_filtered.hg38.final.fasta [1/2/3] [XY/ZW] input.fastq.gz
+Rscript SEXCMD.R -m sex_marker_filtered.hg38.final.fasta -t [1/2/3] -s [XY/ZW] -f input.fastq.gz -p [Optional Output Prefix]
 
 [1/2/3] : sequencing type (1: Exome sequencing, 2: RNA sequencing, 3: Whole genome sequencing)
 
