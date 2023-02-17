@@ -1,5 +1,5 @@
 #!/bin/env Rscript
-
+library(optparse)
 ## Total read count (EXOME based)
 TOTAL_READ_COUNT <- 1E6
 
@@ -8,19 +8,33 @@ WES_COEF <- c(1, 1)
 WGS_COEF <- c(1, 150)
 RNA_COEF <- c(1, 5)
 
-## Argument handle
-args <- commandArgs(trailingOnly = TRUE)
+# command line options
+option_list = list(
+  make_option(c("-m", "--marker_file"), type="character", default=NULL, help="sex marker file", metavar="character"),
+  make_option(c("-t", "--type_flag"), type="character", default=NULL, help="sequening type flag [1/2/3], 1:WES Seq, 2:RNA-Seq, 3:WGS Seq", metavar="character"),
+  make_option(c("-s", "--sex_type"), type="character", default=NULL, help="Sex Type [XY/ZW]", metavar="character"),
+  make_option(c("-f", "--input_fastq"), type="character", default="Input fastq file", help="input", metavar="character"),
+  make_option(c("-p", "--prefix"), type="character", default=NULL, help="prefix", metavar="character"),
+  make_option(c("-c", "--chromosome"), type="character", default=NULL, help="chromosome", metavar="character")
+)
+
+# get options
+opt_parser <- OptionParser(option_list=option_list);
+opt <- parse_args(opt_parser);
+
+# set better variable names
+marker_file <- opt$marker_file
+type_flag <- opt$type_flag
+sextype <- opt$sex_type
+input_fastq <- opt$input_fastq
+chromosome<-opt$chromosome
+outputPrefix <- opt$prefix
+
+# set chromosomes
+chr.select=ifelse(is.null(chromosome), paste0("chr",c(1:22,"X","Y")), chromosome)
+
 usage_message <- "USAGE: Rscript SEXCMD.R SEX_Marker.fasta total_read_counts Seq_type[1/2/3] [XY/ZW] input.fastq.gz
     Sequencing Type 1:Whole Exome Seq, 2:RNA-Seq, 3:Whole Genome Seq, Sex determination system type : XY or ZW"
-
-if (length(args)!= 4) {
-  write(usage_message, stderr())
-  quit(status = 1)
-}
-marker_file <- as.character(args[1])
-type_flag <- as.numeric(args[2])
-sextype <- as.character(args[3])
-input_fastq <- as.character(args[4])
 
 ## check input files
 check_input <- function(input_file){
@@ -115,12 +129,12 @@ marker_seq_list <- read.fasta(marker_file, set.attributes=F)
 marker_length_list <- lapply(marker_seq_list, length)
 marker_seq_list[] <- 0
 marker_seq_list[count$V1] <- count$V2
-if (sextype = "XY"){
+if (sextype == "XY"){
   ct <- data.frame(Length=do.call(rbind, marker_length_list[startsWith(x = names(marker_seq_list), prefix = "chrX")]), Count=do.call(rbind, marker_seq_list[startsWith(x = names(marker_seq_list), prefix = "chrX")]))
   ct <- cbind(ct, do.call(rbind, marker_seq_list[startsWith(x = names(marker_seq_list), prefix = "chrY")]))
   colnames(ct) <- c("Length", "Xcount", "Ycount")
 }
-if (sextype = "ZW"){
+if (sextype == "ZW"){
   ct <- data.frame(Length=do.call(rbind, marker_length_list[startsWith(x = names(marker_seq_list), prefix = "chrZ")]), Count=do.call(rbind, marker_seq_list[startsWith(x = names(marker_seq_list), prefix = "chrW")]))
   ct <- cbind(ct, do.call(rbind, marker_seq_list[startsWith(x = names(marker_seq_list), prefix = "chrW")]))
   colnames(ct) <- c("Length", "Zcount", "Wcount")
@@ -128,7 +142,7 @@ if (sextype = "ZW"){
 
 ## gender prediction
 rs <- sum(ct$Ycount)/sum(ct$Xcount)
-if (sextype = "XY"){
+if (sextype == "XY"){
   rs <- sum(ct$Ycount)/sum(ct$Xcount)
   if (rs < 0.2){
     sex <- "F"
@@ -137,7 +151,7 @@ if (sextype = "XY"){
   }
   ct <- rbind(ct, c(paste0("Ratio of X and Y counts is ", rs), paste0("Sex of this sample ", input_fastq, " is ", sex), ""))
 }
-if (sextype = "ZW"){
+if (sextype == "ZW"){
   rs <- sum(ct$Wcount)/sum(ct$Zcount)
   if (rs < 0.2){
     sex <- "M"
@@ -149,7 +163,7 @@ if (sextype = "ZW"){
 rownames(ct)[nrow(ct)] <- "Sex_Determination"
 
 # Save the results
-result_file <- paste(input_fastq, ".OUTPUT", sep='')
+result_file <- ifelse(is.null(outputPrefix), paste0(input_fastq, ".OUTPUT"), paste0(outputPrefix, ".OUTPUT"))
 write.table(ct, result_file, quote=F, col.names=NA, sep="\t")
 
 ## make clean
