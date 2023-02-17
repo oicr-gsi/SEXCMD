@@ -68,7 +68,8 @@ Rscript SEXCMD.R -m sex_marker_filtered.hg38.final.fasta -t [1/2/3] -s [XY/ZW] -
 ## Contact
 
 lovemun@kribb.re.kr
+pruzanov@oicr.on.ca
 
 ## Citation
 
-
+https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5590872
